@@ -256,12 +256,14 @@ pub fn value_offsets(data: &[u8], list_offset: u32, count: u32) -> Result<Vec<u3
         return Ok(Vec::new());
     }
     let p = cell_payload(data, list_offset)?;
-    let mut out = Vec::with_capacity(count as usize);
-    for i in 0..count as usize {
-        let o = i * 4;
-        if o + 4 <= p.len() {
-            out.push(rd(p, o));
-        }
+    // `count` comes from the key node and can claim anything up to 4 billion
+    // entries; the list cell bounds what can really be read, and so what is
+    // worth allocating. Entries past the end of the cell were skipped before
+    // as well, so the result on a readable list is unchanged.
+    let count = (count as usize).min(p.len() / 4);
+    let mut out = Vec::with_capacity(count);
+    for i in 0..count {
+        out.push(rd(p, i * 4));
     }
     Ok(out)
 }
@@ -276,13 +278,16 @@ pub fn read_value_data(data: &[u8], vk: &ValueNodeRaw) -> Result<Vec<u8>> {
         return Ok(Vec::new());
     }
     let cell = cell_payload(data, vk.data_offset)?;
-    if size > BIG_DATA_THRESHOLD && cell.len() >= 4 && &cell[0..2] == b"db" {
+    if size > BIG_DATA_THRESHOLD && cell.len() >= 8 && &cell[0..2] == b"db" {
         // Big data: "db", segment count, offset of the segment list.
         let segments = u16::from_le_bytes(cell[2..4].try_into().unwrap()) as usize;
         let list_off = rd(cell, 4);
         let list = cell_payload(data, list_off)?;
-        let mut out = Vec::with_capacity(size);
-        for i in 0..segments {
+        // `size` comes from the value node and can claim up to 2 GiB, while the
+        // segments are cells of this hive: it is the real ceiling. Likewise the
+        // segment count is only as good as the list that holds the offsets.
+        let mut out = Vec::with_capacity(size.min(data.len()));
+        for i in 0..segments.min(list.len() / 4) {
             let seg_off = rd(list, i * 4);
             let seg = cell_payload(data, seg_off)?;
             let take = (size - out.len()).min(seg.len());
