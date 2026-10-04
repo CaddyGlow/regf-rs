@@ -1,5 +1,6 @@
 //! Typing and (de)serialization of registry values (`REG_*`).
 
+use crate::error::{RegError, Result};
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -58,6 +59,8 @@ pub enum RegValue {
     Sz(String),
     ExpandSz(String),
     Binary(Vec<u8>),
+    /// REG_LINK target as raw UTF-16 bytes, preserving termination and encoding.
+    Link(Vec<u8>),
     Dword(u32),
     DwordBigEndian(u32),
     MultiSz(Vec<String>),
@@ -77,6 +80,7 @@ impl RegValue {
             RegValue::Sz(_) => RegType::Sz,
             RegValue::ExpandSz(_) => RegType::ExpandSz,
             RegValue::Binary(_) => RegType::Binary,
+            RegValue::Link(_) => RegType::Link,
             RegValue::Dword(_) => RegType::Dword,
             RegValue::DwordBigEndian(_) => RegType::DwordBigEndian,
             RegValue::MultiSz(_) => RegType::MultiSz,
@@ -90,7 +94,7 @@ impl RegValue {
         match self {
             RegValue::None => Vec::new(),
             RegValue::Sz(s) | RegValue::ExpandSz(s) => encode_utf16z(s),
-            RegValue::Binary(b) => b.clone(),
+            RegValue::Binary(b) | RegValue::Link(b) => b.clone(),
             RegValue::Dword(v) => v.to_le_bytes().to_vec(),
             RegValue::DwordBigEndian(v) => v.to_be_bytes().to_vec(),
             RegValue::Qword(v) => v.to_le_bytes().to_vec(),
@@ -107,8 +111,25 @@ impl RegValue {
     }
 
     /// Decodes a value from its type and raw bytes.
-    pub fn from_raw(ty: RegType, data: &[u8]) -> Self {
-        match ty {
+    ///
+    /// Returns [`RegError::InvalidValueSize`] for DWORD/QWORD data whose
+    /// length does not match its fixed-width type.
+    pub fn from_raw(ty: RegType, data: &[u8]) -> Result<Self> {
+        let expected = match ty {
+            RegType::Dword | RegType::DwordBigEndian => Some(4),
+            RegType::Qword => Some(8),
+            _ => None,
+        };
+        if let Some(expected) = expected {
+            if data.len() != expected {
+                return Err(RegError::InvalidValueSize {
+                    ty: ty.to_u32(),
+                    expected,
+                    actual: data.len(),
+                });
+            }
+        }
+        Ok(match ty {
             RegType::None => RegValue::None,
             RegType::Sz => RegValue::Sz(decode_utf16z(data)),
             RegType::ExpandSz => RegValue::ExpandSz(decode_utf16z(data)),
@@ -116,21 +137,21 @@ impl RegValue {
             RegType::Dword => RegValue::Dword(read_u32_le(data)),
             RegType::DwordBigEndian => {
                 let mut b = [0u8; 4];
-                b.copy_from_slice(&data[..4.min(data.len())]);
+                b.copy_from_slice(data);
                 RegValue::DwordBigEndian(u32::from_be_bytes(b))
             }
-            RegType::Link => RegValue::Sz(decode_utf16z(data)),
+            RegType::Link => RegValue::Link(data.to_vec()),
             RegType::MultiSz => RegValue::MultiSz(decode_multi_sz(data)),
             RegType::Qword => {
                 let mut b = [0u8; 8];
-                b[..data.len().min(8)].copy_from_slice(&data[..data.len().min(8)]);
+                b.copy_from_slice(data);
                 RegValue::Qword(u64::from_le_bytes(b))
             }
             RegType::Other(v) => RegValue::Other {
                 ty: v,
                 data: data.to_vec(),
             },
-        }
+        })
     }
 }
 
@@ -188,7 +209,7 @@ mod tests {
     fn roundtrip(v: RegValue) {
         let ty = v.reg_type();
         let bytes = v.to_bytes();
-        let back = RegValue::from_raw(ty, &bytes);
+        let back = RegValue::from_raw(ty, &bytes).unwrap();
         assert_eq!(v, back, "round-trip failed for {v:?}");
     }
 
@@ -197,6 +218,8 @@ mod tests {
         roundtrip(RegValue::Sz("Hello".to_string()));
         roundtrip(RegValue::ExpandSz("%PATH%".to_string()));
         roundtrip(RegValue::Dword(0xDEAD_BEEF));
+        roundtrip(RegValue::DwordBigEndian(0x12345678));
+        roundtrip(RegValue::Link(vec![65, 0]));
         roundtrip(RegValue::Qword(0x0123_4567_89AB_CDEF));
         roundtrip(RegValue::Binary(vec![1, 2, 3, 4, 5]));
         roundtrip(RegValue::MultiSz(vec!["a".to_string(), "bb".to_string()]));

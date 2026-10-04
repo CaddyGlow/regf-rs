@@ -60,3 +60,74 @@ fn set(h: &mut Hive, elements: &str, code: &str, v: RegValue) {
     h.create_key(&path).unwrap();
     h.set_value(&path, "Element", v).unwrap();
 }
+
+/// A complete independent inventory: key paths, value names, types and raw bytes.
+pub type Inventory =
+    std::collections::BTreeMap<String, std::collections::BTreeMap<String, (u32, Vec<u8>)>>;
+
+pub fn nt_inventory(bytes: &[u8]) -> Inventory {
+    let nt = nt_hive::Hive::new(bytes).expect("independent parse");
+    nt.validate().expect("independent header validation");
+    let mut pending = vec![(String::new(), nt.root_key_node().unwrap())];
+    let mut inventory = Inventory::new();
+    while let Some((path, node)) = pending.pop() {
+        assert!(inventory.len() < 1_000_000, "inventory key budget exceeded");
+        let mut values = std::collections::BTreeMap::new();
+        if let Some(iter) = node.values() {
+            for value in iter.unwrap() {
+                let value = value.unwrap();
+                let name = value.name().unwrap().to_string();
+                let ty = value.data_type().unwrap() as u32;
+                let raw = value.data().unwrap().into_vec().unwrap();
+                assert!(values.insert(name, (ty, raw)).is_none(), "duplicate value");
+            }
+        }
+        assert!(
+            inventory.insert(path.clone(), values).is_none(),
+            "duplicate key"
+        );
+        if let Some(iter) = node.subkeys() {
+            for child in iter.unwrap() {
+                let child = child.unwrap();
+                let name = child.name().unwrap().to_string();
+                let child_path = if path.is_empty() {
+                    name
+                } else {
+                    format!("{path}\\{name}")
+                };
+                pending.push((child_path, child));
+            }
+        }
+    }
+    inventory
+}
+
+pub fn assert_matches_nt(bytes: &[u8]) {
+    let expected = nt_inventory(bytes);
+    let hive = Hive::from_bytes(bytes.to_vec()).unwrap();
+    let mut seen = std::collections::BTreeSet::new();
+    let mut pending = vec![String::new()];
+    while let Some(path) = pending.pop() {
+        assert!(seen.insert(path.clone()), "duplicate key: {path}");
+        let values = hive.list_values(&path).unwrap();
+        let expected_values = expected
+            .get(&path)
+            .expect("key missing from independent reader");
+        assert_eq!(values.len(), expected_values.len(), "value count at {path}");
+        for (name, value) in values {
+            let (ty, raw) = expected_values
+                .get(&name)
+                .expect("value missing from independent reader");
+            let expected_value = RegValue::from_raw(regf_rs::RegType::from_u32(*ty), raw).unwrap();
+            assert_eq!(value, expected_value, "value {path}\\{name}");
+        }
+        for child in hive.list_subkeys(&path).unwrap() {
+            pending.push(if path.is_empty() {
+                child
+            } else {
+                format!("{path}\\{child}")
+            });
+        }
+    }
+    assert_eq!(seen, expected.into_keys().collect(), "key inventory");
+}

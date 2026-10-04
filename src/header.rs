@@ -83,8 +83,17 @@ impl Header {
     /// Rewrites into `data` the header fields that may have changed (hive bins
     /// size, sequences), bumps the version counter to mark a new consistent
     /// transaction, then recomputes the checksum. Call after any modification,
-    /// before serialization.
-    pub fn finalize(&mut self, data: &mut [u8]) {
+    /// before serialization. Dirty headers and undersized buffers are rejected
+    /// without changing either the header or the buffer.
+    pub fn finalize(&mut self, data: &mut [u8]) -> Result<()> {
+        if self.is_dirty() {
+            return Err(RegError::DirtyHive);
+        }
+        if data.len() < REGF_HEADER_SIZE {
+            return Err(RegError::Truncated {
+                offset: REGF_HEADER_SIZE,
+            });
+        }
         let next = self.primary_sequence.wrapping_add(1);
         self.primary_sequence = next;
         self.secondary_sequence = next; // equal ⇒ clean hive
@@ -93,6 +102,7 @@ impl Header {
         wr(data, OFF_HIVE_BINS_SIZE, self.hive_bins_size);
         let sum = Self::checksum(data);
         wr(data, OFF_CHECKSUM, sum);
+        Ok(())
     }
 }
 

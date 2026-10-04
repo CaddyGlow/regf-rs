@@ -15,6 +15,12 @@ pub enum RegError {
     Truncated { offset: usize },
     /// Inconsistent cell (size or signature).
     CorruptCell { offset: usize },
+    /// A fixed-width value has an invalid byte length.
+    InvalidValueSize {
+        ty: u32,
+        expected: usize,
+        actual: usize,
+    },
     /// Key missing at the requested path.
     KeyNotFound(String),
     /// Value missing under the requested key.
@@ -39,6 +45,14 @@ impl fmt::Display for RegError {
             }
             RegError::Truncated { offset } => write!(f, "buffer truncated at offset {offset}"),
             RegError::CorruptCell { offset } => write!(f, "corrupt cell at offset {offset}"),
+            RegError::InvalidValueSize {
+                ty,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "registry type {ty} requires {expected} bytes, found {actual}"
+            ),
             RegError::KeyNotFound(p) => write!(f, "key not found: {p}"),
             RegError::ValueNotFound(v) => write!(f, "value not found: {v}"),
             RegError::DirtyHive => {

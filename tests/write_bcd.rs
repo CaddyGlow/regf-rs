@@ -1,4 +1,3 @@
-#![cfg(feature = "std")]
 //! In-place writing, cross-checked against `nt-hive` on a synthetic hive.
 mod common;
 use common::{synthetic_bcd, BOOTMGR};
@@ -35,7 +34,7 @@ fn modify_default_object() {
     let target = "{aabbccdd-1122-3344-5566-778899aabbcc}";
     h.set_value(&path, "Element", RegValue::Sz(target.into()))
         .unwrap();
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     validate(&bytes);
     assert_eq!(nt_lookup(&bytes, &path).as_deref(), Some(target));
 }
@@ -52,7 +51,7 @@ fn create_boot_sequence_is_findable() {
     h.create_key(&seq).unwrap();
     h.set_value(&seq, "Element", RegValue::MultiSz(vec![win.into()]))
         .unwrap();
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
 
     validate(&bytes);
     let nt = nt_hive::Hive::new(bytes.as_ref()).unwrap();
@@ -75,7 +74,7 @@ fn grow_value_reallocates() {
     let long = "{aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee}".repeat(30);
     h.set_value(&path, "Element", RegValue::Sz(long.clone()))
         .unwrap();
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     validate(&bytes);
     assert_eq!(nt_lookup(&bytes, &path).as_deref(), Some(long.as_str()));
 }
@@ -90,7 +89,7 @@ fn delete_value_works() {
         h.get_value(&path, "Element"),
         Err(regf_rs::RegError::ValueNotFound(_))
     ));
-    validate(&h.to_bytes());
+    validate(&h.to_bytes().unwrap());
 }
 
 #[test]
@@ -103,7 +102,7 @@ fn arm_then_clear_oneshot() {
         .unwrap();
     assert!(h.get_value(&seq, "Element").is_ok());
     h.delete_value(&seq, "Element").unwrap();
-    validate(&h.to_bytes());
+    validate(&h.to_bytes().unwrap());
 }
 
 #[test]
@@ -120,7 +119,7 @@ fn write_preserves_unrelated_data() {
     let after = h.get_value(&witness_path, "Element").unwrap();
     assert_eq!(before, after);
 
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     validate(&bytes);
     let objects: BTreeSet<String> = nt_subkeys(&bytes, "Objects").into_iter().collect();
     assert_eq!(objects.len(), 2); // bootmgr + os loader intact
@@ -133,7 +132,7 @@ fn self_roundtrip() {
     let target = "{deadbeef-0000-1111-2222-333344445555}";
     h.set_value(&path, "Element", RegValue::Sz(target.into()))
         .unwrap();
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     let reloaded = Hive::from_bytes(bytes).unwrap();
     assert!(!reloaded.is_dirty());
     assert_eq!(

@@ -88,10 +88,11 @@ impl Hive {
         // Root node.
         let nk = cell::build_key_node(root_name, cell::FREE, sk_off);
         let nk_off = hive.alloc_write(&nk).expect("alloc nk");
-        // Set the root flags (hive entry | no delete | comp name).
+        // Add root flags without changing the name encoding selected above.
         {
             let p = hbin::payload_mut(&mut hive.data, nk_off).unwrap();
-            p[2..4].copy_from_slice(&0x2Cu16.to_le_bytes());
+            let flags = u16::from_le_bytes(p[2..4].try_into().unwrap()) | 0x0C;
+            p[2..4].copy_from_slice(&flags.to_le_bytes());
         }
 
         // root_cell_offset in the header + resync of the Header struct.
@@ -142,7 +143,7 @@ impl Hive {
         for vk_off in cell::value_offsets(&self.data, nk.value_list_offset, nk.value_count)? {
             let vk = cell::read_value_node(&self.data, vk_off)?;
             let raw = cell::read_value_data(&self.data, &vk)?;
-            out.push((vk.name, RegValue::from_raw(vk.ty, &raw)));
+            out.push((vk.name, RegValue::from_raw(vk.ty, &raw)?));
         }
         Ok(out)
     }
@@ -154,7 +155,7 @@ impl Hive {
             let vk = cell::read_value_node(&self.data, vk_off)?;
             if name::eq_name(&vk.name, value_name) {
                 let raw = cell::read_value_data(&self.data, &vk)?;
-                return Ok(RegValue::from_raw(vk.ty, &raw));
+                return RegValue::from_raw(vk.ty, &raw);
             }
         }
         Err(RegError::ValueNotFound(value_name.to_string()))
@@ -288,15 +289,19 @@ impl Hive {
 
     /// Finalizes the header (sequences + checksum) and returns the hive bytes.
     /// Consumes one sequence "tick": each call produces a distinct consistent
-    /// transaction.
-    pub fn to_bytes(&mut self) -> Vec<u8> {
-        self.header.finalize(&mut self.data);
-        self.data.clone()
+    /// transaction. Returns [`RegError::DirtyHive`] without changing the hive
+    /// when transaction logs have not been reconciled.
+    pub fn to_bytes(&mut self) -> Result<Vec<u8>> {
+        self.guard_writable()?;
+        self.header.finalize(&mut self.data)?;
+        Ok(self.data.clone())
     }
 
     #[cfg(feature = "std")]
     pub fn save<P: AsRef<std::path::Path>>(&mut self, path: P) -> std::io::Result<()> {
-        let bytes = self.to_bytes();
+        let bytes = self
+            .to_bytes()
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         std::fs::write(path, bytes)
     }
 
@@ -469,7 +474,7 @@ fn build_min_security() -> Vec<u8> {
     p
 }
 
-#[cfg(all(test, feature = "std"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::header::{Header, REGF_HEADER_SIZE};
@@ -501,7 +506,7 @@ mod tests {
     fn refuses_write_on_dirty_hive() {
         // Valid empty hive, made "dirty" by desyncing the sequences, then
         // recomputing the checksum so it stays parsable.
-        let mut data = Hive::new_empty("ROOT").to_bytes();
+        let mut data = Hive::new_empty("ROOT").to_bytes().unwrap();
         let primary = u32::from_le_bytes(data[0x04..0x08].try_into().unwrap());
         data[0x08..0x0C].copy_from_slice(&primary.wrapping_add(1).to_le_bytes());
         let sum = Header::checksum(&data);
@@ -523,7 +528,7 @@ mod tests {
     #[test]
     fn finalize_makes_clean() {
         let mut hive = Hive::new_empty("ROOT");
-        let _ = hive.to_bytes();
+        let _ = hive.to_bytes().unwrap();
         assert!(!hive.is_dirty());
         assert_eq!(REGF_HEADER_SIZE, 0x1000);
     }

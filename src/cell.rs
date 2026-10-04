@@ -114,49 +114,45 @@ pub enum LeafKind {
     Li,
 }
 
-/// Returns the nk offsets of a list (resolving `ri` recursively).
+/// Returns the nk offsets of a list, traversing `ri` indexes without recursion.
+/// Repeated index offsets and truncated entries are rejected as corrupt.
 pub fn subkey_offsets(data: &[u8], list_offset: u32) -> Result<Vec<u32>> {
     if list_offset == 0 || list_offset == FREE {
         return Ok(Vec::new());
     }
-    let p = cell_payload(data, list_offset)?;
-    if p.len() < 4 {
-        return Err(RegError::CorruptCell {
-            offset: list_offset as usize,
-        });
-    }
-    let magic = &p[0..2];
-    let count = u16::from_le_bytes(p[2..4].try_into().unwrap()) as usize;
-    let mut out = Vec::with_capacity(count);
-    match magic {
-        b"lf" | b"lh" => {
-            for i in 0..count {
-                let o = 4 + i * 8;
-                if o + 4 <= p.len() {
-                    out.push(rd(p, o));
-                }
-            }
+    let mut pending = alloc::vec![list_offset];
+    let mut visited = alloc::collections::BTreeSet::new();
+    let mut out = Vec::new();
+    while let Some(offset) = pending.pop() {
+        let corrupt = || RegError::CorruptCell {
+            offset: offset as usize,
+        };
+        if !visited.insert(offset) {
+            return Err(corrupt());
         }
-        b"li" => {
-            for i in 0..count {
-                let o = 4 + i * 4;
-                if o + 4 <= p.len() {
-                    out.push(rd(p, o));
-                }
-            }
+        let p = cell_payload(data, offset)?;
+        if p.len() < 4 {
+            return Err(corrupt());
         }
-        b"ri" => {
-            for i in 0..count {
-                let o = 4 + i * 4;
-                if o + 4 <= p.len() {
-                    out.extend(subkey_offsets(data, rd(p, o))?);
-                }
-            }
+        let magic = &p[..2];
+        let count = u16::from_le_bytes(p[2..4].try_into().unwrap()) as usize;
+        let stride = match magic {
+            b"lf" | b"lh" => 8,
+            b"li" | b"ri" => 4,
+            _ => return Err(corrupt()),
+        };
+        if count > (p.len() - 4) / stride {
+            return Err(corrupt());
         }
-        _ => {
-            return Err(RegError::CorruptCell {
-                offset: list_offset as usize,
-            })
+        if magic == b"ri" {
+            // Reverse push preserves the original leaf order when popped.
+            for i in (0..count).rev() {
+                pending.push(rd(p, 4 + i * stride));
+            }
+        } else {
+            for i in 0..count {
+                out.push(rd(p, 4 + i * stride));
+            }
         }
     }
     Ok(out)
@@ -272,7 +268,12 @@ pub fn value_offsets(data: &[u8], list_offset: u32, count: u32) -> Result<Vec<u3
 pub fn read_value_data(data: &[u8], vk: &ValueNodeRaw) -> Result<Vec<u8>> {
     let size = vk.data_size as usize;
     if vk.inline {
-        return Ok(vk.data_offset.to_le_bytes()[..size.min(4)].to_vec());
+        if size > 4 {
+            return Err(RegError::CorruptCell {
+                offset: vk.data_offset as usize,
+            });
+        }
+        return Ok(vk.data_offset.to_le_bytes()[..size].to_vec());
     }
     if size == 0 {
         return Ok(Vec::new());
@@ -283,20 +284,32 @@ pub fn read_value_data(data: &[u8], vk: &ValueNodeRaw) -> Result<Vec<u8>> {
         let segments = u16::from_le_bytes(cell[2..4].try_into().unwrap()) as usize;
         let list_off = rd(cell, 4);
         let list = cell_payload(data, list_off)?;
-        // `size` comes from the value node and can claim up to 2 GiB, while the
-        // segments are cells of this hive: it is the real ceiling. Likewise the
-        // segment count is only as good as the list that holds the offsets.
+        if segments < size.div_ceil(BIG_DATA_THRESHOLD) || segments > list.len() / 4 {
+            return Err(RegError::CorruptCell {
+                offset: vk.data_offset as usize,
+            });
+        }
         let mut out = Vec::with_capacity(size.min(data.len()));
-        for i in 0..segments.min(list.len() / 4) {
+        for i in 0..segments {
+            if out.len() == size {
+                break;
+            }
             let seg_off = rd(list, i * 4);
             let seg = cell_payload(data, seg_off)?;
-            let take = (size - out.len()).min(seg.len());
-            out.extend_from_slice(&seg[..take]);
+            // Cell alignment padding is not part of a big-data segment.
+            let take = (size - out.len()).min(BIG_DATA_THRESHOLD);
+            let bytes = seg.get(..take).ok_or(RegError::CorruptCell {
+                offset: seg_off as usize,
+            })?;
+            out.extend_from_slice(bytes);
         }
-        out.truncate(size);
         Ok(out)
     } else {
-        Ok(cell[..size.min(cell.len())].to_vec())
+        cell.get(..size)
+            .map(|bytes| bytes.to_vec())
+            .ok_or(RegError::CorruptCell {
+                offset: vk.data_offset as usize,
+            })
     }
 }
 
@@ -386,4 +399,90 @@ fn rd(p: &[u8], off: usize) -> u32 {
 #[inline]
 fn wr(p: &mut [u8], off: usize, v: u32) {
     p[off..off + 4].copy_from_slice(&v.to_le_bytes());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn append_cell(data: &mut Vec<u8>, bins: &mut u32, payload: &[u8]) -> u32 {
+        let off = crate::hbin::allocate(data, bins, payload.len()).unwrap();
+        crate::hbin::payload_mut(data, off).unwrap()[..payload.len()].copy_from_slice(payload);
+        off
+    }
+
+    fn index_payload(offsets: &[u32]) -> Vec<u8> {
+        let mut p = alloc::vec![b'r', b'i'];
+        p.extend_from_slice(&(offsets.len() as u16).to_le_bytes());
+        for off in offsets {
+            p.extend_from_slice(&off.to_le_bytes());
+        }
+        p
+    }
+
+    #[test]
+    fn nested_indexes_preserve_leaf_order() {
+        let mut data = crate::Hive::new_empty("ROOT").to_bytes().unwrap();
+        let mut bins = crate::Header::parse(&data).unwrap().hive_bins_size;
+        let a = append_cell(
+            &mut data,
+            &mut bins,
+            &build_leaf_list(LeafKind::Li, &[("a".into(), 100), ("b".into(), 200)]),
+        );
+        let b = append_cell(
+            &mut data,
+            &mut bins,
+            &build_leaf_list(LeafKind::Lf, &[("c".into(), 300)]),
+        );
+        let nested = append_cell(&mut data, &mut bins, &index_payload(&[a]));
+        let root = append_cell(&mut data, &mut bins, &index_payload(&[nested, b]));
+        assert_eq!(subkey_offsets(&data, root).unwrap(), [100, 200, 300]);
+    }
+
+    #[test]
+    fn deep_indexes_do_not_use_the_call_stack() {
+        let mut data = crate::Hive::new_empty("ROOT").to_bytes().unwrap();
+        let mut bins = crate::Header::parse(&data).unwrap().hive_bins_size;
+        let mut off = append_cell(
+            &mut data,
+            &mut bins,
+            &build_leaf_list(LeafKind::Li, &[("a".into(), 100)]),
+        );
+        for _ in 0..4096 {
+            off = append_cell(&mut data, &mut bins, &index_payload(&[off]));
+        }
+        assert_eq!(subkey_offsets(&data, off).unwrap(), [100]);
+    }
+
+    #[test]
+    fn duplicate_indexes_and_multi_node_cycles_are_rejected() {
+        let mut data = crate::Hive::new_empty("ROOT").to_bytes().unwrap();
+        let mut bins = crate::Header::parse(&data).unwrap().hive_bins_size;
+        let leaf = append_cell(&mut data, &mut bins, &build_leaf_list(LeafKind::Li, &[]));
+        let root = append_cell(&mut data, &mut bins, &index_payload(&[leaf, leaf]));
+        assert!(matches!(
+            subkey_offsets(&data, root),
+            Err(RegError::CorruptCell { .. })
+        ));
+        let a = append_cell(&mut data, &mut bins, &index_payload(&[leaf]));
+        let b = append_cell(&mut data, &mut bins, &index_payload(&[a]));
+        wr(crate::hbin::payload_mut(&mut data, a).unwrap(), 4, b);
+        assert!(matches!(
+            subkey_offsets(&data, a),
+            Err(RegError::CorruptCell { .. })
+        ));
+    }
+
+    #[test]
+    fn truncated_subkey_indexes_are_rejected() {
+        for magic in [b"lf", b"lh", b"li", b"ri"] {
+            let mut data = crate::Hive::new_empty("ROOT").to_bytes().unwrap();
+            let mut bins = crate::Header::parse(&data).unwrap().hive_bins_size;
+            let off = append_cell(&mut data, &mut bins, &[magic[0], magic[1], 1, 0]);
+            assert!(matches!(
+                subkey_offsets(&data, off),
+                Err(RegError::CorruptCell { .. })
+            ));
+        }
+    }
 }

@@ -1,4 +1,3 @@
-#![cfg(feature = "std")]
 mod common;
 use common::{synthetic_bcd, BOOTMGR, OSLOADER};
 use regf_rs::{Hive, RegValue};
@@ -7,7 +6,7 @@ use regf_rs::{Hive, RegValue};
 #[test]
 fn new_empty_is_valid() {
     let mut h = Hive::new_empty("BCD");
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     let nt = nt_hive::Hive::new(bytes.as_ref()).expect("nt-hive parse");
     nt.validate().expect("valid structure");
     assert_eq!(
@@ -26,7 +25,7 @@ fn synthetic_bcd_roundtrips() {
         RegValue::Sz(OSLOADER.into())
     );
 
-    let bytes = h.to_bytes();
+    let bytes = h.to_bytes().unwrap();
     let nt = nt_hive::Hive::new(bytes.as_ref()).unwrap();
     nt.validate().unwrap();
     // Binary search on the nt-hive side (⇒ correctly sorted lists).

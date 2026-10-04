@@ -61,7 +61,38 @@ To additionally validate against a real hive produced by Windows, point the
 `REGF_TEST_HIVE` variable at a local file (never committed):
 
 ```sh
-REGF_TEST_HIVE=/boot/efi/EFI/Microsoft/Boot/BCD cargo test --test real_hive
+REGF_TEST_HIVE=/boot/efi/EFI/Microsoft/Boot/BCD cargo test --test real_hive -- --ignored
+```
+
+The opt-in tests compare all keys and decoded values against `nt-hive`. They
+also edit an in-memory copy, verify the changes with the independent reader,
+and compare unrelated values byte for byte. The source file is never written.
+These checks do not establish native Windows load or boot compatibility.
+
+## Unreleased API changes
+
+Serialization is now fallible: `Hive::to_bytes()` returns `Result<Vec<u8>>`,
+and `Header::finalize()` returns `Result<()>`. Both reject dirty hives with
+`RegError::DirtyHive`; serialization never substitutes for transaction-log replay.
+`Hive::save()` reports this as an `InvalidData` I/O error before touching its
+output path.
+
+`RegValue::from_raw()` now returns `Result<RegValue>` and rejects incorrectly
+sized DWORD/QWORD data with `RegError::InvalidValueSize`. Update callers to
+propagate these errors with `?` rather than assuming serialization or decoding
+always succeeds.
+
+`RegValue::Link(Vec<u8>)` preserves `REG_LINK` data as raw UTF-16 bytes, including
+its original termination. Callers matching all `RegValue` variants must handle
+this new variant; links no longer decode as `RegValue::Sz`.
+
+```rust
+use regf_rs::{Hive, RegValue, Result};
+
+fn configure(hive: &mut Hive) -> Result<Vec<u8>> {
+    hive.set_value("", "Count", RegValue::Dword(42))?;
+    hive.to_bytes()
+}
 ```
 
 ## License
