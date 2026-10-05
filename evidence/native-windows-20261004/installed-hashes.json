@@ -1,0 +1,17 @@
+[
+    {
+        "Algorithm":  "SHA256",
+        "Hash":  "768437B9342CE5C5E30D7ADBDFBC431CE29CE363FF6B024FBB1C135C611B4918",
+        "Path":  "D:\\Windows\\System32\\config\\SOFTWARE"
+    },
+    {
+        "Algorithm":  "SHA256",
+        "Hash":  "3412AB51C4F1206F631EDF9A6190FA6398C1611AB20EFCA27C1EC4B9847139A7",
+        "Path":  "D:\\Windows\\System32\\config\\SYSTEM"
+    },
+    {
+        "Algorithm":  "SHA256",
+        "Hash":  "454B340313504F5829D8AAD4CFDC243A694BD9B03274261E9818413511102E91",
+        "Path":  "S:\\EFI\\Microsoft\\Boot\\BCD"
+    }
+]

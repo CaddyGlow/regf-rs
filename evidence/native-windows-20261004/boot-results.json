@@ -1,0 +1,124 @@
+{
+    "os":  "Microsoft Windows 11 Pro",
+    "version":  "10.0.26200",
+    "build":  "26200",
+    "last_boot_utc":  "2026-10-05T03:46:36.5000000Z",
+    "secure_boot":  true,
+    "marker":  "regf-native-20261005-final",
+    "software":  [
+                     {
+                         "name":  "Marker",
+                         "type":  1,
+                         "length":  54,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Expanded",
+                         "type":  2,
+                         "length":  58,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Dword",
+                         "type":  4,
+                         "length":  4,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "BigEndian",
+                         "type":  5,
+                         "length":  4,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Qword",
+                         "type":  11,
+                         "length":  8,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Multi",
+                         "type":  7,
+                         "length":  28,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Binary",
+                         "type":  3,
+                         "length":  16344,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Link",
+                         "type":  6,
+                         "length":  52,
+                         "matched":  true
+                     },
+                     {
+                         "name":  "Replaced",
+                         "type":  4,
+                         "length":  4,
+                         "matched":  true
+                     }
+                 ],
+    "system":  [
+                   {
+                       "name":  "Marker",
+                       "type":  1,
+                       "length":  54,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Expanded",
+                       "type":  2,
+                       "length":  58,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Dword",
+                       "type":  4,
+                       "length":  4,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "BigEndian",
+                       "type":  5,
+                       "length":  4,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Qword",
+                       "type":  11,
+                       "length":  8,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Multi",
+                       "type":  7,
+                       "length":  28,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Binary",
+                       "type":  3,
+                       "length":  16344,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Link",
+                       "type":  6,
+                       "length":  52,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Replaced",
+                       "type":  4,
+                       "length":  4,
+                       "matched":  true
+                   }
+               ],
+    "winpe_configuration_persisted":  true,
+    "bcd_marker_matched":  true,
+    "bcd_timeout":  7,
+    "guest_agent_after_boot":  true
+}

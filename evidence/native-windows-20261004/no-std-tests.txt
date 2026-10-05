@@ -1,0 +1,86 @@
+   Compiling regf-rs v0.1.1 (/tmp/regf-rs-review)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (/data/cache/rust/debug/deps/regf_rs-8ad8c73bd585b26a)
+
+running 13 tests
+test cell::tests::duplicate_indexes_and_multi_node_cycles_are_rejected ... ok
+test cell::tests::nested_indexes_preserve_leaf_order ... ok
+test cell::tests::truncated_subkey_indexes_are_rejected ... ok
+test hive::tests::header_dirty_detection ... ok
+test hive::tests::finalize_makes_clean ... ok
+test hive::tests::refuses_write_on_dirty_hive ... ok
+test name::tests::case_insensitive_equality ... ok
+test name::tests::hash_is_case_insensitive ... ok
+test name::tests::ordering_matches_ascii_upcase ... ok
+test name::tests::sort_is_stable_and_correct ... ok
+test value::tests::roundtrip_all_types ... ok
+test value::tests::sz_is_null_terminated_utf16 ... ok
+test cell::tests::deep_indexes_do_not_use_the_call_stack ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/hive_integrity.rs (/data/cache/rust/debug/deps/hive_integrity-50e745d964f24522)
+
+running 16 tests
+test allocation_rejects_truncated_declared_bins ... ok
+test allocation_rejects_a_bin_crossing_the_declared_region ... ok
+test fixed_width_values_reject_short_and_long_data ... ok
+test header_finalization_rejects_dirty_state_without_mutating_bytes ... ok
+test cyclic_subkey_index_returns_error ... ok
+test link_value_keeps_its_type ... ok
+test big_data_read_excludes_segment_alignment_padding ... ok
+test link_bytes_and_type_survive_hive_roundtrip ... ok
+test serialization_must_not_clear_unreplayed_dirty_state ... ok
+test root_name_encoding_matches_independent_reader ... ok
+test short_big_endian_value_must_not_panic ... ok
+test incomplete_big_data_is_rejected ... ok
+test hive_growth_starts_at_declared_bins_end_despite_file_padding ... ok
+test truncated_external_and_oversized_inline_data_are_rejected ... ok
+test unicode_root_name_roundtrips ... ok
+test short_big_data_segment_is_rejected ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/read_bcd.rs (/data/cache/rust/debug/deps/read_bcd-d9001684184fdebd)
+
+running 3 tests
+test parse_header_and_root ... ok
+test cross_check_with_nt_hive ... ok
+test reads_values_of_all_kinds ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/real_hive.rs (/data/cache/rust/debug/deps/real_hive-2c3dee81251007fa)
+
+running 2 tests
+test edits_real_hive_and_preserves_unrelated_raw_values ... ignored, requires REGF_TEST_HIVE pointing to a clean Windows-produced hive
+test reads_real_hive_and_matches_nt_hive ... ignored, requires REGF_TEST_HIVE pointing to a Windows-produced hive
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/synthetic.rs (/data/cache/rust/debug/deps/synthetic-0e828f030fb9658c)
+
+running 2 tests
+test new_empty_is_valid ... ok
+test synthetic_bcd_roundtrips ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/write_bcd.rs (/data/cache/rust/debug/deps/write_bcd-b67dce3445c09ffc)
+
+running 7 tests
+test delete_value_works ... ok
+test modify_default_object ... ok
+test arm_then_clear_oneshot ... ok
+test create_boot_sequence_is_findable ... ok
+test self_roundtrip ... ok
+test grow_value_reallocates ... ok
+test write_preserves_unrelated_data ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests regf_rs
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

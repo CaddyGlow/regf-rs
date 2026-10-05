@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "binary_sha256": "E3824FAA282EB329DC920EA56ABE8E1CCA53ABCD6674412433E323720B122D2C",
+  "target_os": "Microsoft Windows 11 Pro",
+  "target_build": "26200",
+  "helper_os": "Microsoft Windows 10 Pro",
+  "secure_boot": true,
+  "last_boot_utc": "2026-10-05T03:46:36.5000000Z",
+  "marker": "regf-native-20261005-final",
+  "installed_hive_hashes_verified": true,
+  "bcd_timeout": 7,
+  "test_instances_stopped": true,
+  "immutable_bases_modified": false,
+  "whole_software_cross_reader_audit": "cancelled after extended runtime; not counted as passed",
+  "fresh_hive_value_checks": 9,
+  "offline_value_checks": 18,
+  "post_boot_value_checks": 18
+}

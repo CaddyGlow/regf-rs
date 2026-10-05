@@ -1,0 +1,33 @@
+**********************
+Windows PowerShell transcript start
+Start time: 20261005034540
+Username: DEPLOYV-C9DQI1R\deploy
+RunAs User: DEPLOYV-C9DQI1R\deploy
+Configuration Name:
+Machine: DEPLOYV-C9DQI1R (Microsoft Windows NT 10.0.19045.0)
+Host Application: c:\windows\system32\windowspowershell\v1.0\powershell.exe -c $ErrorActionPreference="Stop"; Copy-Item C:\regf-native\boot-final\software.original D:\Windows\System32\config\SOFTWARE -Force; Copy-Item C:\regf-native\boot-final\system.original D:\Windows\System32\config\SYSTEM -Force; New-Item -ItemType Directory C:\regf-native\boot-ready | Out-Null; Copy-Item C:\regf-native\native_probe.exe C:\regf-native\boot-ready; & C:\regf-native\offline.ps1 -WindowsRoot D:\ -EspRoot S:\ -Directory C:\regf-native\boot-ready; Copy-Item C:\regf-native\common.ps1,C:\regf-native\after-boot.ps1,C:\regf-native\native.ps1,C:\regf-native\native_probe.exe D:\regf-native\ -Force
+Process ID: 4912
+PSVersion: 5.1.19041.3803
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.3803
+BuildVersion: 10.0.19041.3803
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+The operation completed successfully.
+
+The operation completed successfully.
+
+
+The operation completed successfully.
+
+The operation completed successfully.
+
+
+**********************
+Windows PowerShell transcript end
+End time: 20261005034543
+**********************

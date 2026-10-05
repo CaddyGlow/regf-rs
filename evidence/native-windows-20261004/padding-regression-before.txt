@@ -1,0 +1,24 @@
+   Compiling regf-rs v0.1.1 (/tmp/regf-rs-review)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+     Running tests/hive_integrity.rs (/data/cache/rust/debug/deps/hive_integrity-9f1724c8caf0fff2)
+
+running 1 test
+test hive_growth_starts_at_declared_bins_end_despite_file_padding ... FAILED
+
+failures:
+
+---- hive_growth_starts_at_declared_bins_end_despite_file_padding stdout ----
+
+thread 'hive_growth_starts_at_declared_bins_end_despite_file_padding' (210) panicked at tests/hive_integrity.rs:276:9:
+assertion `left == right` failed
+  left: [165, 165, 165, 165]
+ right: [104, 98, 105, 110]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    hive_growth_starts_at_declared_bins_end_despite_file_padding
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test hive_integrity`

@@ -1,0 +1,67 @@
+{
+    "os":  "Microsoft Windows 11 Pro",
+    "version":  "10.0.26200",
+    "build":  "26200",
+    "secure_boot":  true,
+    "binary_sha256":  "E3824FAA282EB329DC920EA56ABE8E1CCA53ABCD6674412433E323720B122D2C",
+    "fresh_hive_sha256":  "D725903D7761E4E0B71D118986C73F20F2DB3526F0D3575EC659A976BEA93DD5",
+    "native_load":  true,
+    "values":  [
+                   {
+                       "name":  "Marker",
+                       "type":  1,
+                       "length":  32,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Expanded",
+                       "type":  2,
+                       "length":  58,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Dword",
+                       "type":  4,
+                       "length":  4,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "BigEndian",
+                       "type":  5,
+                       "length":  4,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Qword",
+                       "type":  11,
+                       "length":  8,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Multi",
+                       "type":  7,
+                       "length":  28,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Binary",
+                       "type":  3,
+                       "length":  16344,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Link",
+                       "type":  6,
+                       "length":  52,
+                       "matched":  true
+                   },
+                   {
+                       "name":  "Replaced",
+                       "type":  4,
+                       "length":  4,
+                       "matched":  true
+                   }
+               ],
+    "native_write":  true,
+    "native_unload":  true
+}

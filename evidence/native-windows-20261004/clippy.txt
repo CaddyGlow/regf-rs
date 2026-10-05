@@ -1,0 +1,2 @@
+    Checking regf-rs v0.1.1 (/tmp/regf-rs-review)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s

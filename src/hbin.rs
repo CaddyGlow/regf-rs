@@ -60,7 +60,10 @@ pub fn allocate(
     // 1. First-fit search among the free cells.
     let mut pos = REGF_HEADER_SIZE;
     let end = REGF_HEADER_SIZE + *header_hive_bins_size as usize;
-    while pos + HBIN_HEADER <= end.min(data.len()) {
+    if end > data.len() {
+        return Err(RegError::Truncated { offset: end });
+    }
+    while pos + HBIN_HEADER <= end {
         if &data[pos..pos + 4] != HBIN_MAGIC {
             break; // no more coherent HBIN
         }
@@ -68,7 +71,10 @@ pub fn allocate(
         if hbin_size == 0 {
             break;
         }
-        let hbin_end = (pos + hbin_size).min(data.len());
+        let hbin_end = pos
+            .checked_add(hbin_size)
+            .filter(|&bin_end| bin_end <= end)
+            .ok_or(RegError::CorruptCell { offset: pos })?;
         let mut cur = pos + HBIN_HEADER;
         while cur + 4 <= hbin_end {
             let raw = cell_raw_size(data, cur)?;
@@ -86,11 +92,21 @@ pub fn allocate(
         pos += hbin_size;
     }
 
-    // 2. No room: append a new HBIN at the end.
+    // 2. Grow the declared hive-bin region, not the physical file. Windows
+    // hives may have preallocated padding after this region; appending after
+    // that padding creates unreachable cells that Windows drops during load.
     let new_hbin_size = align_up(HBIN_HEADER + need, HBIN_GRANULARITY);
     let hbin_data_offset = *header_hive_bins_size;
-    let base = data.len();
-    data.resize(base + new_hbin_size, 0);
+    let base = end;
+    let new_bins_size = u32::try_from(new_hbin_size)
+        .ok()
+        .and_then(|size| header_hive_bins_size.checked_add(size))
+        .ok_or(RegError::CorruptCell { offset: base })?;
+    let new_end = base
+        .checked_add(new_hbin_size)
+        .ok_or(RegError::CorruptCell { offset: base })?;
+    data.resize(data.len().max(new_end), 0);
+    data[base..new_end].fill(0);
     // HBIN header
     data[base..base + 4].copy_from_slice(HBIN_MAGIC);
     data[base + 4..base + 8].copy_from_slice(&hbin_data_offset.to_le_bytes());
@@ -103,7 +119,7 @@ pub fn allocate(
     if leftover >= CELL_ALIGN {
         write_size(data, cell + need, leftover as i32);
     }
-    *header_hive_bins_size += new_hbin_size as u32;
+    *header_hive_bins_size = new_bins_size;
     Ok(rel(cell))
 }
 

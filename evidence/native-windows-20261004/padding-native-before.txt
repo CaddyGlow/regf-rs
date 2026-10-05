@@ -1,0 +1,18 @@
+The operation completed successfully.
+
+
+HKEY_LOCAL_MACHINE\REGF_DIAG\Microsoft\Windows NT\CurrentVersion\WinPE
+    CustomBackground    REG_EXPAND_SZ    %SystemRoot%\regf-native.bmp
+
+
+HKEY_LOCAL_MACHINE\REGF_DIAG\RegfNativeValidation
+    Marker    REG_SZ    regf-native-f9c57a7
+    Expanded    REG_EXPAND_SZ    %SystemRoot%\regf-native.bmp
+    Dword    REG_DWORD    0x12345678
+    BigEndian    REG_DWORD_BIG_ENDIAN    0x78563412
+    Qword    REG_QWORD    0x123456789abcdef0
+    Multi    REG_MULTI_SZ    first\0second
+    Link    REG_LINK    5C00520065006700690073007400720079005C004D0061006300680069006E0065005C0053004F00460054005700410052004500
+    Replaced    REG_DWORD    0x2a
+
+The operation completed successfully.

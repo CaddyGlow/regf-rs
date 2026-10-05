@@ -1,0 +1,29 @@
+**********************
+Windows PowerShell transcript start
+Start time: 20261005034733
+Username: WORKGROUP\SYSTEM
+RunAs User: WORKGROUP\SYSTEM
+Configuration Name:
+Machine: DEPLOYV-TA28MFE (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\regf-native\native.ps1
+Process ID: 436
+PSVersion: 5.1.26100.7920
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.7920
+BuildVersion: 10.0.26100.7920
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+The operation completed successfully.
+
+The operation completed successfully.
+
+The operation completed successfully.
+
+**********************
+Windows PowerShell transcript end
+End time: 20261005034735
+**********************

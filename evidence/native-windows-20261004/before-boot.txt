@@ -1,0 +1,11 @@
+{
+    "Caption":  "Microsoft Windows 11 Pro",
+    "Version":  "10.0.26200",
+    "BuildNumber":  "26200",
+    "LastBootUpTime":  "\/Date(1791146210500)\/"
+}
+{
+    "Number":  0,
+    "PartitionStyle":  "GPT",
+    "UniqueId":  "0000000000000003"
+}

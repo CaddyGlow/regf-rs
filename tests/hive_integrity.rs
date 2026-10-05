@@ -263,3 +263,64 @@ fn header_finalization_rejects_dirty_state_without_mutating_bytes() {
     assert_eq!(b, before);
     assert!(header.is_dirty());
 }
+
+#[test]
+fn hive_growth_starts_at_declared_bins_end_despite_file_padding() {
+    for padding in [4096, 32768] {
+        let mut bytes = Hive::new_empty("ROOT").to_bytes().unwrap();
+        let old_end = 4096 + Header::parse(&bytes).unwrap().hive_bins_size as usize;
+        bytes.resize(bytes.len() + padding, 0xa5);
+        let mut hive = Hive::from_bytes(bytes).unwrap();
+        hive.set_value("", "large", RegValue::Binary(vec![0x5a; 16344]))
+            .unwrap();
+        let bytes = hive.to_bytes().unwrap();
+        assert_eq!(&bytes[old_end..old_end + 4], b"hbin");
+        assert_eq!(rd(&bytes, old_end + 4) as usize, old_end - 4096);
+        let end = 4096 + Header::parse(&bytes).unwrap().hive_bins_size as usize;
+        let value = vk(&bytes, 0);
+        let data = 4096 + rd(&bytes, value + 8) as usize;
+        assert!(
+            data + 4 + 16344 <= end,
+            "value was written outside the declared hive bins"
+        );
+        let oracle = nt_hive::Hive::new(bytes.as_slice()).unwrap();
+        oracle.validate().unwrap();
+        let root = oracle.root_key_node().unwrap();
+        assert_eq!(
+            root.value("large")
+                .unwrap()
+                .unwrap()
+                .data()
+                .unwrap()
+                .into_vec()
+                .unwrap(),
+            vec![0x5a; 16344]
+        );
+    }
+}
+
+#[test]
+fn allocation_rejects_truncated_declared_bins() {
+    let mut bytes = Hive::new_empty("ROOT").to_bytes().unwrap();
+    let bins = rd(&bytes, 0x28);
+    wr(&mut bytes, 0x28, bins + 4096);
+    let checksum = Header::checksum(&bytes);
+    wr(&mut bytes, 0x1fc, checksum);
+    let mut hive = Hive::from_bytes(bytes).unwrap();
+    assert!(matches!(
+        hive.set_value("", "value", RegValue::Dword(1)),
+        Err(RegError::Truncated { .. })
+    ));
+}
+
+#[test]
+fn allocation_rejects_a_bin_crossing_the_declared_region() {
+    let mut bytes = Hive::new_empty("ROOT").to_bytes().unwrap();
+    bytes.resize(bytes.len() + 4096, 0);
+    wr(&mut bytes, 4096 + 8, 8192);
+    let mut hive = Hive::from_bytes(bytes).unwrap();
+    assert!(matches!(
+        hive.set_value("", "value", RegValue::Dword(1)),
+        Err(RegError::CorruptCell { .. })
+    ));
+}

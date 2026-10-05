@@ -1,0 +1,143 @@
+{
+    "marker":  "regf-native-20261005-final",
+    "helper_os":  "Microsoft Windows 10 Pro",
+    "cases":  [
+                  {
+                      "mode":  "software",
+                      "source_sha256":  "F792973896E15899379D74B57FAA7E12C55B7EEAE3E6D5F189FFCE91D997F745",
+                      "edited_sha256":  "768437B9342CE5C5E30D7ADBDFBC431CE29CE363FF6B024FBB1C135C611B4918",
+                      "installed_sha256":  "768437B9342CE5C5E30D7ADBDFBC431CE29CE363FF6B024FBB1C135C611B4918",
+                      "native_validation":  [
+                                                {
+                                                    "name":  "Marker",
+                                                    "type":  1,
+                                                    "length":  54,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Expanded",
+                                                    "type":  2,
+                                                    "length":  58,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Dword",
+                                                    "type":  4,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "BigEndian",
+                                                    "type":  5,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Qword",
+                                                    "type":  11,
+                                                    "length":  8,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Multi",
+                                                    "type":  7,
+                                                    "length":  28,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Binary",
+                                                    "type":  3,
+                                                    "length":  16344,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Link",
+                                                    "type":  6,
+                                                    "length":  52,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Replaced",
+                                                    "type":  4,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                }
+                                            ]
+                  },
+                  {
+                      "mode":  "system",
+                      "source_sha256":  "5EE77A57A462FDD5B03A610B72397FF8DDD74726BFB37A84B28E48FDE44DE0F7",
+                      "edited_sha256":  "3412AB51C4F1206F631EDF9A6190FA6398C1611AB20EFCA27C1EC4B9847139A7",
+                      "installed_sha256":  "3412AB51C4F1206F631EDF9A6190FA6398C1611AB20EFCA27C1EC4B9847139A7",
+                      "native_validation":  [
+                                                {
+                                                    "name":  "Marker",
+                                                    "type":  1,
+                                                    "length":  54,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Expanded",
+                                                    "type":  2,
+                                                    "length":  58,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Dword",
+                                                    "type":  4,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "BigEndian",
+                                                    "type":  5,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Qword",
+                                                    "type":  11,
+                                                    "length":  8,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Multi",
+                                                    "type":  7,
+                                                    "length":  28,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Binary",
+                                                    "type":  3,
+                                                    "length":  16344,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Link",
+                                                    "type":  6,
+                                                    "length":  52,
+                                                    "matched":  true
+                                                },
+                                                {
+                                                    "name":  "Replaced",
+                                                    "type":  4,
+                                                    "length":  4,
+                                                    "matched":  true
+                                                }
+                                            ]
+                  },
+                  {
+                      "mode":  "bcd",
+                      "source_sha256":  "A821115143D7473B9E16B14B648B40AD0B7A1B428FE4A5DCD9152A9F7E4E999B",
+                      "edited_sha256":  "454B340313504F5829D8AAD4CFDC243A694BD9B03274261E9818413511102E91",
+                      "installed_sha256":  "454B340313504F5829D8AAD4CFDC243A694BD9B03274261E9818413511102E91",
+                      "native_validation":  [
+                                                {
+                                                    "bcdedit":  true,
+                                                    "marker":  "regf-native-20261005-final"
+                                                }
+                                            ]
+                  }
+              ],
+    "binary_sha256":  "E3824FAA282EB329DC920EA56ABE8E1CCA53ABCD6674412433E323720B122D2C"
+}

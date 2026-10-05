@@ -69,6 +69,17 @@ also edit an in-memory copy, verify the changes with the independent reader,
 and compare unrelated values byte for byte. The source file is never written.
 These checks do not establish native Windows load or boot compatibility.
 
+## Native validation
+
+The native Windows validation harness is documented in
+[`scripts/native-validation/README.md`](scripts/native-validation/README.md).
+It exercises native hive loading, exact value readback and booting a disposable
+Windows installation with Rust-edited SOFTWARE, SYSTEM and BCD hives.
+The [2026-10-04/05 evidence](evidence/native-windows-20261004/README.md) records
+successful native loading and a Secure Boot Windows 11 build 26200 boot. That
+run also exposed and fixed allocation beyond the declared hive-bin region in
+files with trailing padding.
+
 ## Unreleased API changes
 
 Serialization is now fallible: `Hive::to_bytes()` returns `Result<Vec<u8>>`,
